@@ -16,6 +16,7 @@ Users can record expenses manually, upload multiple expenses through CSV, automa
 ---
 Demo
 https://drive.google.com/file/d/1ZuiWQvMns0Ur1LOXaGmpULwbi76xWknw/view?usp=sharing
+---
 ## Prerequisites
 
 Make sure the following are installed before running the application:
