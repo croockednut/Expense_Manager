@@ -2,8 +2,15 @@ import { useEffect, useState } from "react";
 import { api } from "./api";
 import { AlertTriangle, TrendingUp, ShoppingBag, Activity } from "lucide-react";
 
+interface MonthlyEntry {
+  year: number;
+  month: number;
+  category: string;
+  total: number;
+}
+
 interface DashboardData {
-  monthlyTotalsByCategory?: Record<string, number>;
+  monthlyEntries?: MonthlyEntry[];
   topVendors?: Array<{ name: string; total: number }>;
   anomalies?: Array<{
     id?: number;
@@ -15,9 +22,14 @@ interface DashboardData {
   }>;
 }
 
+const MONTH_NAMES = [
+  "", "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
+
 export default function Dashboard() {
   const [data, setData] = useState<DashboardData>({
-    monthlyTotalsByCategory: {},
+    monthlyEntries: [],
     topVendors: [],
     anomalies: []
   });
@@ -32,21 +44,23 @@ export default function Dashboard() {
       .then(r => {
         const apiData = r.data;
 
-        const monthlyTotalsByCategory = apiData.categories.reduce(
-          (acc: Record<string, number>, [, , category, amount]: [number, number, string, number]) => {
-            acc[category] = amount;
-            return acc;
-          },
-          {}
+        // categories is a list of [year, month, category, total] arrays from the backend
+        const monthlyEntries: MonthlyEntry[] = (apiData.categories || []).map(
+          (row: [number, number, string, number]) => ({
+            year: row[0],
+            month: row[1],
+            category: row[2],
+            total: row[3]
+          })
         );
 
-        const topVendors = apiData.vendors.map((v: [string, number]) => ({
+        const topVendors = (apiData.vendors || []).map((v: [string, number]) => ({
           name: v[0],
           total: v[1]
         }));
 
         setData({
-          monthlyTotalsByCategory,
+          monthlyEntries,
           topVendors,
           anomalies: apiData.anomalies || []
         });
@@ -62,7 +76,7 @@ export default function Dashboard() {
   const loadAnomalies = (page: number) => {
     setAnomaliesLoading(true);
 
-    api.get(`/dashboard?page=₹{page}&size=5`)
+    api.get(`/dashboard?page=${page}&size=5`)
       .then(r => {
         const apiData = r.data;
 
@@ -86,7 +100,16 @@ export default function Dashboard() {
     );
   }
 
-  const cats = data.monthlyTotalsByCategory || {};
+  // Group monthly entries by "Year Month" label
+  const monthlyEntries = data.monthlyEntries || [];
+  const groupedByMonth: Record<string, MonthlyEntry[]> = {};
+  for (const entry of monthlyEntries) {
+    const key = `${entry.year}-${String(entry.month).padStart(2, "0")}`;
+    if (!groupedByMonth[key]) groupedByMonth[key] = [];
+    groupedByMonth[key].push(entry);
+  }
+  const sortedMonthKeys = Object.keys(groupedByMonth).sort();
+
   const vendors = data.topVendors || [];
   const anomalies = data.anomalies || [];
 
@@ -96,9 +119,9 @@ export default function Dashboard() {
         <div className="card stat-card">
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", color: "var(--success-color)", marginBottom: "0.5rem" }}>
             <Activity size={20} />
-            <span className="stat-label">Total Categories</span>
+            <span className="stat-label">Months Tracked</span>
           </div>
-          <div className="stat-value">{Object.keys(cats).length}</div>
+          <div className="stat-value">{sortedMonthKeys.length}</div>
         </div>
 
         <div className="card stat-card">
@@ -125,24 +148,30 @@ export default function Dashboard() {
           </h3>
 
           <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Category</th>
-                  <th style={{ textAlign: "right" }}>Total Amount</th>
-                </tr>
-              </thead>
-              <tbody>
-                {Object.entries(cats).length === 0 ? (
-                  <tr><td colSpan={2} style={{ textAlign: "center", color: "var(--text-secondary)" }}>No data</td></tr>
-                ) : Object.entries(cats).map(([cat, total]) => (
-                  <tr key={cat}>
-                    <td><span className="badge badge-primary">{cat}</span></td>
-                    <td style={{ textAlign: "right", fontWeight: "600" }}>₹{Number(total).toFixed(2)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {sortedMonthKeys.length === 0 ? (
+              <p style={{ textAlign: "center", color: "var(--text-secondary)" }}>No data</p>
+            ) : sortedMonthKeys.map(key => {
+              const [year, monthNum] = key.split("-");
+              const label = `${MONTH_NAMES[parseInt(monthNum)]} ${year}`;
+              const entries = groupedByMonth[key];
+              return (
+                <div key={key} style={{ marginBottom: "1.25rem" }}>
+                  <div style={{ fontWeight: "600", marginBottom: "0.5rem", color: "var(--text-secondary)", fontSize: "0.85rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+                    {label}
+                  </div>
+                  <table style={{ width: "100%" }}>
+                    <tbody>
+                      {entries.map(e => (
+                        <tr key={`${key}-${e.category}`}>
+                          <td><span className="badge badge-primary">{e.category}</span></td>
+                          <td style={{ textAlign: "right", fontWeight: "600" }}>₹{Number(e.total).toFixed(2)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              );
+            })}
           </div>
         </div>
 
@@ -200,7 +229,7 @@ export default function Dashboard() {
               ) : anomalies.length === 0 ? (
                 <tr><td colSpan={5} style={{ textAlign: "center", color: "var(--text-secondary)", padding: "2rem" }}>No anomalies detected. Great job!</td></tr>
               ) : anomalies.map(a => (
-                <tr key={a.id ?? `₹{a.vendorName}-₹{a.expenseDate}`} className="anomaly-row">
+                <tr key={a.id ?? `${a.vendorName}-${a.expenseDate}`} className="anomaly-row">
                   <td>{a.expenseDate}</td>
                   <td style={{ fontWeight: "500" }}>{a.vendorName}</td>
                   <td><span className="badge badge-danger">{a.categoryName}</span></td>
