@@ -1,34 +1,65 @@
-Mini Expense Manager
-Tech Stack
-React + TypeScript, Spring Boot, PostgreSQL
+# Mini Expense Manager
 
-Setup
+A full-stack expense management application that allows users to record daily expenses, upload expenses through CSV, automatically categorize expenses based on vendors, detect unusually high expenses, and view spending summaries through a dashboard.
 
-Frontend:
-Create React app (Vite)
-Place files from frontend folder
+## Tech Stack
 
-npm install 
-npm start
+### Frontend
+- React
+- TypeScript
+- Vite
 
-Backend:
-Create DB: expense_db
+### Backend
+- Java
+- Spring Boot
+- Spring Data JPA
+- Maven
 
-Update credentials in application.properties
-Run Spring Boot app (port 8081)
+### Database
+- PostgreSQL
 
+---
 
+## Features
 
-Design Note
+### 1. Manual Expense Entry
 
-I implemented rule-based categorization using a simple vendor-to-category mapping in the service layer (e.g., Swiggy → Food).  
+Users can add an expense using:
 
-During expense creation and CSV upload, the vendor name is matched and the category is assigned automatically.  
+- Date
+- Amount
+- Vendor Name
+- Description
 
-For anomaly detection, I calculate the average expense amount per category from the database and flag any expense that is more than 3× this average.  
+The expense category is automatically determined based on the vendor name.
 
-The data model is kept simple with a single Expense table storing date, amount, vendor, category, and anomaly flag.  This keeps queries and logic easy to understand for a small application.  
+For example:
 
-As a trade-off, CSV parsing is basic (comma-separated without advanced validation), and the categorization rules are hard-coded instead of stored in a separate table.  
+| Vendor | Category |
+|---|---|
+| Swiggy | Food |
+| Zomato | Food |
+| Uber | Transport |
+| Ola | Transport |
+| Amazon | Shopping |
+| Flipkart | Shopping |
+| Netflix | Entertainment |
+| Electricity | Bills |
 
-The UI and validations are minimal since the focus is on backend logic and overall approach.
+Vendors that do not match a predefined rule are categorized as `Other`.
+
+Vendor matching is case-insensitive.
+
+---
+
+### 2. CSV Expense Upload
+
+The application supports uploading multiple expenses through a CSV file.
+
+Expected CSV format:
+
+```csv
+Date,Amount,Vendor,Description
+2026-08-01,250,Swiggy,Lunch
+2026-08-02,1200,Amazon,Headphones
+2026-08-03,350,Uber,Cab
