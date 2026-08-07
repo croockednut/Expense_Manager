@@ -1,7 +1,5 @@
 # Mini Expense Manager
 
-A full-stack expense management application built as a coding assignment for **iConcile Technologies**.
-
 Users can record expenses manually, upload multiple expenses through CSV, automatically categorize expenses based on vendor names, detect unusually high expenses, and view spending summaries through a dashboard.
 
 ---
@@ -33,8 +31,8 @@ Make sure the following are installed before running the application:
 ### 1. Clone the Repository
 
 ```bash
-git clone <YOUR_GITHUB_REPOSITORY_URL>
-cd <YOUR_PROJECT_DIRECTORY>
+git clone https://github.com/croockednut/Expense_Manager
+cd Expense_Manager
 ```
 
 ### 2. Database Setup
