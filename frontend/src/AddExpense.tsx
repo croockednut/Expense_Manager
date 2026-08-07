@@ -62,12 +62,24 @@ export default function AddExpense() {
     setMsg({ text: "", type: "" });
 
     try {
-      await api.post("/upload", formData, {
+      const res = await api.post("/upload", formData, {
         headers: { "Content-Type": "multipart/form-data" }
       });
-      setMsg({ text: "CSV uploaded successfully!", type: "success" });
-    } catch (error) {
-      setMsg({ text: "Failed to upload CSV", type: "error" });
+      const result = res.data;
+      if (result.failureCount > 0) {
+        const errorSummary = result.errors
+          .map((e: { rowNumber: number; reason: string }) => `Row ${e.rowNumber}: ${e.reason}`)
+          .join("\n");
+        setMsg({
+          text: `Uploaded: ${result.successCount} succeeded, ${result.failureCount} failed.\n${errorSummary}`,
+          type: result.successCount > 0 ? "warn" : "error"
+        });
+      } else {
+        setMsg({ text: `CSV uploaded successfully! ${result.successCount} expenses imported.`, type: "success" });
+      }
+    } catch (error: any) {
+      const msg = error?.response?.data;
+      setMsg({ text: typeof msg === "string" ? msg : "Failed to upload CSV", type: "error" });
     } finally {
       setLoading(false);
       if (fileInputRef.current) fileInputRef.current.value = "";
