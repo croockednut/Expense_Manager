@@ -1,0 +1,5 @@
+com\expence_manager\ExpenceManagerApp\controller\ExpenseController.class
+com\expence_manager\ExpenceManagerApp\ExpenceManagerAppApplication.class
+com\expence_manager\ExpenceManagerApp\entity\Expense.class
+com\expence_manager\ExpenceManagerApp\service\ExpenseService.class
+com\expence_manager\ExpenceManagerApp\repository\ExpenseRepository.class
